@@ -1,6 +1,7 @@
 #include "hash_table.h"
 #include "stdlib.h"
 #include "string.h"
+#include "math.h"
 
 static hashTableItem* hashTableNewItem(const char* k, const char* v) {
     hashTableItem* i = malloc(sizeof(hashTableItem));
@@ -36,4 +37,15 @@ void deleteHashTable(hashTable* hashTable) {
 
     free(hashTable->items);
     free(hashTable);
+}
+
+static int generateHash(const char* s, const int a, const int m) {
+    long hash = 0;
+    const int sLen = strlen(s);
+    for (int i = 0; i < sLen; ++i) {
+        hash += (long)pow(a, sLen - (i+1)) * s[i];
+        hash = hash % m;
+    }
+
+    return (int)hash;
 }
