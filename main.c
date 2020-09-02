@@ -1,6 +1,6 @@
-#include "hash_table.c"
+#include "hash_table.h"
 
 int main() {
     hashTable* hashTable = newHashTable();
-    deleteHashTable(hashTable);
+    insert(hashTable, (const char*)'d', (const char*)'a');
 }

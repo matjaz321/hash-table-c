@@ -1,7 +1,3 @@
-//
-// Created by matjaz on 01.09.20.
-//
-
 #ifndef C_HASH_TABLES_HASH_TABLE_H
 #define C_HASH_TABLES_HASH_TABLE_H
 
@@ -16,4 +12,8 @@ typedef struct {
     hashTableItem** items;
 } hashTable;
 
+hashTable* newHashTable();
+void deleteHashTable(hashTable* hashTable);
+void insert(hashTable* hashTable, const char* key, const char* value);
+char* search(hashTable* hashTable, const char* key);
 #endif //C_HASH_TABLES_HASH_TABLE_H
