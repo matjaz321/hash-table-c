@@ -6,6 +6,8 @@
 int HT_PRIME_1 = 53;
 int HT_PRIME_2 = 61;
 
+static hashTableItem  HASH_TABLE_DELETED_ITEM = {NULL, NULL};
+
 // Assign memory to the new bucket and add the properties (key, value)
 static hashTableItem* hashTableNewItem(const char* k, const char* v) {
     hashTableItem* i = malloc(sizeof(hashTableItem));
@@ -89,6 +91,13 @@ void insert(hashTable* hashTable, const char* key, const char* value) {
     hashTableItem* currentItem = hashTable->items[hash];
     int i = 1;
     while (currentItem != NULL) {
+        if (currentItem != &HASH_TABLE_DELETED_ITEM) {
+            if (strcmp(currentItem->key, key) == 0) {
+                deleteHashTableItem(currentItem);
+                hashTable->items[hash] = item;
+                return;
+            }
+        }
         hash = getHash(item->key, hashTable->size, i);
         currentItem = hashTable->items[hash];
         i++;
@@ -102,8 +111,10 @@ char* search(hashTable* hashTable, const char* key) {
     hashTableItem* item = hashTable->items[hash];
     int i = 1;
     while (item != NULL) {
-        if (strcmp(item->key, key) == 0) {
-            return item->value;
+        if (item != &HASH_TABLE_DELETED_ITEM) {
+            if (strcmp(item->key, key) == 0) {
+                return item->value;
+            }
         }
 
         hash = getHash(key, hashTable->size, i);
@@ -112,4 +123,24 @@ char* search(hashTable* hashTable, const char* key) {
     }
 
     return NULL;
+}
+
+void delete(hashTable* hashTable, const char* key) {
+    int hash = getHash(key, hashTable->size, 0);
+    hashTableItem* item = hashTable->items[hash];
+    int i = 1;
+
+    while (item != NULL) {
+        if (item != &HASH_TABLE_DELETED_ITEM) {
+            if (strcmp(item->key, key) == 0 ) {
+                deleteHashTableItem(item);
+                hashTable->items[hash] = &HASH_TABLE_DELETED_ITEM;
+            }
+        }
+
+        hash = getHash(key, hashTable->size, i);
+        item = hashTable->items[hash];
+        i++;
+    }
+    hashTable->count++;
 }
