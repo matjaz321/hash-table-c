@@ -2,9 +2,11 @@
 #include "stdlib.h"
 #include "string.h"
 #include <math.h>
+#include "prime.h"
 
 int HT_PRIME_1 = 53;
 int HT_PRIME_2 = 61;
+int HASH_TABLE_INITIAL_BASE_SIZE = 53;
 
 static hashTableItem  HASH_TABLE_DELETED_ITEM = {NULL, NULL};
 
@@ -17,15 +19,59 @@ static hashTableItem* hashTableNewItem(const char* k, const char* v) {
     return i;
 }
 
+static hashTable* hashTableNewSized(const int baseSize) {
+    hashTable* hashTable1 =  malloc(sizeof(hashTable));
+    hashTable1->baseSize = baseSize;
+
+    hashTable1->size = nextPrime(hashTable1->baseSize);
+    hashTable1->count = 0;
+    hashTable1->items = calloc((size_t)hashTable1->size, sizeof(hashTableItem*));
+
+    return hashTable1;
+}
+
+static void resize(hashTable* hashTable1, const int baseSize) {
+    if (baseSize < HASH_TABLE_INITIAL_BASE_SIZE) {
+        return;
+    }
+
+    hashTable* newHashTable = hashTableNewSized(baseSize);
+
+    for (int i = 0; i < hashTable1->size; i++) {
+        hashTableItem* item = hashTable1->items[i];
+        if (item != NULL && item != &HASH_TABLE_DELETED_ITEM) {
+            insert(newHashTable, item->key, item->value);
+        }
+    }
+
+    hashTable1->baseSize = newHashTable->baseSize;
+    hashTable1->count = newHashTable->count;
+
+    const int tmpSize = hashTable1->size;
+    hashTable1->size = newHashTable->size;
+    newHashTable->size = tmpSize;
+
+    hashTableItem** tmpItems = hashTable1->items;
+    hashTable1->items = newHashTable->items;
+    newHashTable->items = tmpItems;
+
+    deleteHashTable(newHashTable);
+}
+
+// Table is resized when the limit load is 0.7
+static void resizeUp(hashTable* hashTable1) {
+    resize(hashTable1, hashTable1->baseSize * 2);
+}
+
+
+// Table is resized down when the limit is bellow 0.1
+static void resizeDown(hashTable* hashTable1) {
+    resize(hashTable1, hashTable1->baseSize / 2);
+}
+
 // Assign memory to the new hash table
 hashTable* newHashTable() {
-    hashTable* ht = malloc(sizeof(ht));
-
-    ht->size = 53;
-    ht->count = 0;
-    ht->items = calloc((size_t)ht->size, sizeof(hashTableItem*));
-
-    return ht;
+    return hashTableNewSized(HASH_TABLE_INITIAL_BASE_SIZE);
 }
 
 // Free up the memory which will result into deleting a bucket
@@ -86,6 +132,11 @@ static int getHash(const char* s, const int numOfBuckets, const int attempt) {
 }
 
 void insert(hashTable* hashTable, const char* key, const char* value) {
+    // Just for simpler math multiple by 1100
+    if (hashTable->count * 100 / hashTable->size > 70) {
+        resizeUp(hashTable);
+    }
+
     hashTableItem* item = hashTableNewItem(key, value);
     int hash = getHash(item->key, hashTable->size, 0);
     hashTableItem* currentItem = hashTable->items[hash];
@@ -126,6 +177,12 @@ char* search(hashTable* hashTable, const char* key) {
 }
 
 void delete(hashTable* hashTable, const char* key) {
+    // For simpler math multiply by 100
+    if (hashTable->count * 100 / hashTable->size < 10) {
+        resizeDown(hashTable);
+    }
+
+
     int hash = getHash(key, hashTable->size, 0);
     hashTableItem* item = hashTable->items[hash];
     int i = 1;

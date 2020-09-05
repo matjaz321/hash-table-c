@@ -9,6 +9,7 @@ typedef struct {
 typedef struct {
     int size;
     int count;
+    int baseSize;
     hashTableItem** items;
 } hashTable;
 
